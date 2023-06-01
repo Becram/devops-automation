@@ -6,8 +6,8 @@ import (
 	"net/http/pprof"
 	"os"
 
-	"devops-automation/pkg/config"
-	"devops-automation/pkg/logging"
+	"github.com/Becram/devops-automation/pkg/config"
+	"github.com/Becram/devops-automation/pkg/logging"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
