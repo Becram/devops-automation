@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"devops-automation/pkg/logging"
+	"github.com/Becram/devops-automation/pkg/logging"
 
 	"gopkg.in/yaml.v2"
 	// "github.com/nerdswords/yet-another-cloudwatch-exporter/pkg/logging"

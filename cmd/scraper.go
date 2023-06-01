@@ -10,6 +10,7 @@ type scraper struct {
 }
 
 func NewScraper(featureFlags []string) *scraper { //nolint:revive
+	fmt.Println("new scrapper running")
 	return &scraper{
 		featureFlags: featureFlags,
 	}

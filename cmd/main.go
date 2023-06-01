@@ -33,7 +33,6 @@ var (
 	addr             string
 	configFile       string
 	debug            bool
-	fips             bool
 	profilingEnabled bool
 
 	logger logging.Logger
@@ -82,12 +81,6 @@ func NewApp() *cli.App {
 			Destination: &debug,
 			EnvVars:     []string{"debug"},
 		},
-		&cli.BoolFlag{
-			Name:        "fips",
-			Value:       false,
-			Usage:       "Use FIPS compliant AWS API endpoints",
-			Destination: &fips,
-		},
 		&cli.StringSliceFlag{
 			Name:  enableFeatureFlag,
 			Usage: "Comma-separated list of enabled features",
@@ -131,17 +124,24 @@ func NewApp() *cli.App {
 	return auto
 }
 
+// The function starts a web scraper and sets up a server to handle HTTP requests for metrics and
+// health checks.
 func startScraper(c *cli.Context) error {
+	fmt.Println("Scrapping")
 	logger.Info("Parsing config")
 	if err := cfg.Load(configFile, logger); err != nil {
-		return fmt.Errorf("Couldn't read %s: %w", configFile, err)
+		return fmt.Errorf("couldn't read %s: %w", configFile, err)
 	}
 
 	logger.Info("auto startup completed", "version", version)
 
 	featureFlags := c.StringSlice(enableFeatureFlag)
+	fmt.Println(featureFlags)
 
 	s := NewScraper(featureFlags)
+	fmt.Println(s.featureFlags)
+
+	// s := NewScraper(featureFlags)
 	// cache := v1.NewClientCache(cfg, fips, logger)
 	// for _, featureFlag := range featureFlags {
 	// 	if featureFlag == config.AwsSdkV2 {
@@ -156,6 +156,7 @@ func startScraper(c *cli.Context) error {
 	// }
 
 	// ctx, cancelRunningScrape := context.WithCancel(context.Background())
+	// go s.decoupled(ctx, logger, cache)
 
 	mux := http.NewServeMux()
 
@@ -167,36 +168,7 @@ func startScraper(c *cli.Context) error {
 		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	}
 
-	mux.HandleFunc("/metrics", s.makeHandler())
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		pprofLink := ""
-		if profilingEnabled {
-			pprofLink = htmlPprof
-		}
-
-		_, _ = w.Write([]byte(fmt.Sprintf(htmlVersion, version, pprofLink)))
-	})
-
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
-	})
-
-	mux.HandleFunc("/reload", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		logger.Info("Parsing config")
-		if err := cfg.Load(configFile, logger); err != nil {
-			logger.Error(err, "Couldn't read config file", "path", configFile)
-			return
-		}
-
-		logger.Info("Reset clients cache")
-		// go s.decoupled(ctx, logger, cache)
-	})
+	mux.HandleFunc("/", s.makeHandler())
 
 	srv := &http.Server{Addr: addr, Handler: mux}
 	return srv.ListenAndServe()
