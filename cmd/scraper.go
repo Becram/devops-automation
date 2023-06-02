@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -10,7 +9,6 @@ type scraper struct {
 }
 
 func NewScraper(featureFlags []string) *scraper { //nolint:revive
-	fmt.Println("new scrapper running")
 	return &scraper{
 		featureFlags: featureFlags,
 	}
@@ -18,6 +16,6 @@ func NewScraper(featureFlags []string) *scraper { //nolint:revive
 
 func (s *scraper) makeHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("running fine")
+		logger.Info("running /", "feature flags", s.featureFlags)
 	}
 }

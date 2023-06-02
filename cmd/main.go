@@ -62,7 +62,7 @@ func NewApp() *cli.App {
 	auto.Flags = []cli.Flag{
 		&cli.StringFlag{
 			Name:        "listen-address",
-			Value:       ":5000",
+			Value:       ":8181",
 			Usage:       "The address to listen on",
 			Destination: &addr,
 			EnvVars:     []string{"listen-address"},
@@ -127,7 +127,6 @@ func NewApp() *cli.App {
 // The function starts a web scraper and sets up a server to handle HTTP requests for metrics and
 // health checks.
 func startScraper(c *cli.Context) error {
-	fmt.Println("Scrapping")
 	logger.Info("Parsing config")
 	if err := cfg.Load(configFile, logger); err != nil {
 		return fmt.Errorf("couldn't read %s: %w", configFile, err)
@@ -136,27 +135,8 @@ func startScraper(c *cli.Context) error {
 	logger.Info("auto startup completed", "version", version)
 
 	featureFlags := c.StringSlice(enableFeatureFlag)
-	fmt.Println(featureFlags)
-
 	s := NewScraper(featureFlags)
-	fmt.Println(s.featureFlags)
-
-	// s := NewScraper(featureFlags)
-	// cache := v1.NewClientCache(cfg, fips, logger)
-	// for _, featureFlag := range featureFlags {
-	// 	if featureFlag == config.AwsSdkV2 {
-	// 		logger.Info("Using aws sdk v2")
-	// 		var err error
-	// 		// Can't override cache while also creating err
-	// 		cache, err = v2.NewCache(cfg, fips, logger)
-	// 		if err != nil {
-	// 			return fmt.Errorf("failed to construct aws sdk v2 client cache: %w", err)
-	// 		}
-	// 	}
-	// }
-
-	// ctx, cancelRunningScrape := context.WithCancel(context.Background())
-	// go s.decoupled(ctx, logger, cache)
+	email := NewMailerConf(&cfg)
 
 	mux := http.NewServeMux()
 
@@ -169,6 +149,7 @@ func startScraper(c *cli.Context) error {
 	}
 
 	mux.HandleFunc("/", s.makeHandler())
+	mux.HandleFunc("/email", email.mailHandler())
 
 	srv := &http.Server{Addr: addr, Handler: mux}
 	return srv.ListenAndServe()

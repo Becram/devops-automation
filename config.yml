@@ -1,0 +1,9 @@
+apiVersion: v1alpha1
+region: eu-west
+email:
+  enable: true
+  sendto: "bikram.dhoju@gmail.com"
+  sendername: "Bikram"
+  sender: "test@arthuronline.co.uk"
+  subject: test
+  templatepath: "/app/email.tpl.html"

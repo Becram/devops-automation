@@ -8,13 +8,19 @@ import (
 	"github.com/Becram/devops-automation/pkg/logging"
 
 	"gopkg.in/yaml.v2"
-	// "github.com/nerdswords/yet-another-cloudwatch-exporter/pkg/logging"
-	// "github.com/nerdswords/yet-another-cloudwatch-exporter/pkg/model"
 )
 
 type ScrapeConf struct {
 	APIVersion string `yaml:"apiVersion"`
-	StsRegion  string `yaml:"region"`
+	Region     string `yaml:"region"`
+	Email      struct {
+		Enable       string `yaml:"enable"`
+		SendTo       string `yaml:"sendto"`
+		SenderName   string `yaml:"sendername"`
+		Sender       string `yaml:"sender"`
+		Subject      string `yaml:"subject"`
+		TemplatePath string `yam:"templatepath"`
+	}
 }
 
 func (c *ScrapeConf) Load(file string, logger logging.Logger) error {
@@ -61,10 +67,14 @@ func logConfigErrors(cfg []byte, logger logging.Logger) {
 		errMsgs = append(errMsgs, "missing apiVersion")
 	}
 
+	if sc.Email.Enable == "true" {
+		logger.Info("Email enabled", "receivers", sc.Email.SendTo)
+	}
+
 	if len(errMsgs) > 0 {
 		for _, msg := range errMsgs {
 			logger.Warn("config file syntax error", "err", msg)
 		}
-		logger.Warn(`Config file error(s) detected: Yace might not work as expected. Future versions of Yace might fail to run with an invalid config file.`)
+		logger.Warn(`Config file error(s) detected: App might not work as expected. Future versions of App might fail to run with an invalid config file.`)
 	}
 }
